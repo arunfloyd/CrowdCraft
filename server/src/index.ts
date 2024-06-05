@@ -5,9 +5,10 @@ import cookieParser from "cookie-parser";
 import compression from "compression";
 import cors from "cors";
 import mongoose from "mongoose";
+import multer from "multer";
 import router from "./router";
 const app = express();
-
+const uploader = multer();
 app.use(
   cors({
     credentials: true,
@@ -17,6 +18,7 @@ app.use(
 app.use(compression());
 app.use(cookieParser());
 app.use(bodyParser.json());
+// app.use(uploader.none());
 
 const server = http.createServer(app);
 

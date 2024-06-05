@@ -10,3 +10,5 @@ export const authentication = (salt: string, password: string) => {
     .update(SECRET)
     .digest("hex");
 };
+
+
