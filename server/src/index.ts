@@ -1,3 +1,4 @@
+require('dotenv').config();
 import express from "express";
 import http from "http";
 import bodyParser from "body-parser";
@@ -14,6 +15,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(express.json());
 
 app.use(compression());
 app.use(cookieParser());

@@ -8,7 +8,7 @@ const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
 export const register = async (req: express.Request, res: express.Response) => {
   try {
-    const { email, password, username,phone,location } = req.body;
+    const { email, password, username, phone, location } = req.body;
     const file = req?.file;
     console.log(email, "email");
 
@@ -17,8 +17,8 @@ export const register = async (req: express.Request, res: express.Response) => {
     // }
 
     const existingUser = await getUserByEmail(email);
-    if (existingUser) return res.status(200).json({ message: "User Already Exist" });
-
+    if (existingUser)
+      return res.status(200).json({ message: "User Already Exist" });
 
     // Upload image to Cloudinary
     const result = await cloudinary.uploader.upload(file.path);
@@ -28,9 +28,9 @@ export const register = async (req: express.Request, res: express.Response) => {
     const user = await createUser({
       email,
       username,
-      phoneNumber:phone,
+      phoneNumber: phone,
       location,
-      profilePictureURL: result.secure_url, 
+      profilePictureURL: result.secure_url,
       authentication: { salt, password: authentication(salt, password) },
     });
 
@@ -40,44 +40,57 @@ export const register = async (req: express.Request, res: express.Response) => {
     return res.sendStatus(400);
   }
 };
-
-export const loginUser = async(req:express.Request,res:express.Response)=>{
+export const loginUser = async (
+  req: express.Request,
+  res: express.Response
+) => {
   try {
     const { email, password } = req.body;
+    console.log(email, password);
 
     if (!email || !password) {
-      return res.sendStatus(400);
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
+
     const user = await getUserByEmail(email).select(
       "+authentication.salt +authentication.password"
     );
     if (!user) {
-      return res.sendStatus(400);
+      return res.status(400).json({ message: "Invalid credentials" });
     }
+
     const expectedHash = authentication(user.authentication.salt, password);
 
     if (user.authentication.password !== expectedHash) {
-      return res.sendStatus(403);
+      return res.status(403).json({ message: "Invalid credentials" });
     }
+
     const salt = random();
     user.authentication.sessionToken = authentication(
       salt,
       user._id.toString()
     );
     await user.save();
-    console.log("login sucess")
+    console.log("login success");
 
     res.cookie("CrowdCraft", user.authentication.sessionToken, {
       domain: "localhost",
       path: "/",
     });
-    return res.status(200).json({ user: { username: user.username, email: user.email, _id: user._id } }).end();
 
+    return res
+      .status(200)
+      .json({
+        user: { username: user.username, email: user.email, _id: user._id },
+      });
   } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
+    console.error(error);
+    return res.status(500).json({ message: "An unexpected error occurred" });
   }
-}
+};
+
 export const checkEmailExist = async (
   req: express.Request,
   res: express.Response
@@ -124,20 +137,24 @@ const sendMail = async (
 };
 
 const sendEmail = async (email: Emailemail) => {
+  console.log(process.env.NODEMAILER_USERNAME,'ded')
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
     auth: {
-      user: "arunfloyd9497@gmail.com",
-      pass: "cnyv vdpf ssro gzgr",
+      user: process.env.NODEMAILER_USERNAME,
+      pass: process.env.NODEMAILER_PASSWORD,
     },
   });
 
   await sendMail(transporter, email);
 };
 
-export const emailVerification = async (req: express.Request, res: express.Response) => {
+export const emailVerification = async (
+  req: express.Request,
+  res: express.Response
+) => {
   const emailId = req.query.emailId as string;
 
   if (!emailId || typeof emailId !== "string") {
@@ -191,7 +208,7 @@ export const emailVerification = async (req: express.Request, res: express.Respo
         await Otp.findByIdAndDelete(savedOtp._id);
         console.log(`OTP for email ${emailId} deleted after 59 seconds`);
       } catch (deleteError) {
-        console.error('Error deleting OTP:', deleteError);
+        console.error("Error deleting OTP:", deleteError);
       }
     }, 59 * 1000);
 

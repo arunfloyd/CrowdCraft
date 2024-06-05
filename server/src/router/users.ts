@@ -10,5 +10,5 @@ export default (router: express.Router) => {
   router.get("/checkEmail", checkEmailExist);
   router.get("/emailVerification", emailVerification);
   router.post("/verifyOTP", verifyEmail);
-  router.post("/",loginUser)
+  router.post("/login",loginUser)
 };

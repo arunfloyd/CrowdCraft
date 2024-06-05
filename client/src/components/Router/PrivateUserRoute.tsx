@@ -7,3 +7,4 @@ const PrivateUserRoute = () => {
 };
 
 export default PrivateUserRoute;
+
