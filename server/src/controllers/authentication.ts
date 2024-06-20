@@ -4,6 +4,7 @@ import express from "express";
 import { authentication, random } from "../helpers";
 import nodemailer from "nodemailer";
 import cloudinary from "../utils/cloudinary";
+import { generateToken } from "../utils/generateToken";
 const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
 export const register = async (req: express.Request, res: express.Response) => {
@@ -12,9 +13,9 @@ export const register = async (req: express.Request, res: express.Response) => {
     const file = req?.file;
     console.log(email, "email");
 
-    // if (!email || !password || !username || !file) {
-    //   return res.sendStatus(400);
-    // }
+    if (!email || !password || !username || !file) {
+      return res.sendStatus(400);
+    }
 
     const existingUser = await getUserByEmail(email);
     if (existingUser)
@@ -49,9 +50,7 @@ export const loginUser = async (
     console.log(email, password);
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     const user = await getUserByEmail(email).select(
@@ -67,24 +66,13 @@ export const loginUser = async (
       return res.status(403).json({ message: "Invalid credentials" });
     }
 
-    const salt = random();
-    user.authentication.sessionToken = authentication(
-      salt,
-      user._id.toString()
-    );
+    user.authentication.sessionToken = generateToken(res, user._id);
     await user.save();
     console.log("login success");
 
-    res.cookie("CrowdCraft", user.authentication.sessionToken, {
-      domain: "localhost",
-      path: "/",
+    return res.status(200).json({
+      user: { username: user.username, email: user.email, _id: user._id },
     });
-
-    return res
-      .status(200)
-      .json({
-        user: { username: user.username, email: user.email, _id: user._id },
-      });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "An unexpected error occurred" });
@@ -137,7 +125,7 @@ const sendMail = async (
 };
 
 const sendEmail = async (email: Emailemail) => {
-  console.log(process.env.NODEMAILER_USERNAME,'ded')
+  console.log(process.env.NODEMAILER_USERNAME, "ded");
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
